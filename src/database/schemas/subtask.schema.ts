@@ -1,8 +1,7 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { BaseSchemaWithSoftDelete } from './schema';
+import { TaskStatus } from '../../shared/enums';
 import { Types } from 'mongoose';
-
-export type SubTaskDocument = SubTask & Document;
 
 @Schema({ timestamps: true })
 export class SubTask extends BaseSchemaWithSoftDelete {
@@ -12,11 +11,11 @@ export class SubTask extends BaseSchemaWithSoftDelete {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ default: false })
-  isCompleted: boolean;
+  @Prop({ enum: TaskStatus, default: TaskStatus.PENDING })
+  status: TaskStatus;
 
   @Prop({ type: Types.ObjectId, ref: 'Task' })
-  task: Types.ObjectId;
+  parentTask: string;
 }
 
 export const SubTaskSchema = SchemaFactory.createForClass(SubTask);

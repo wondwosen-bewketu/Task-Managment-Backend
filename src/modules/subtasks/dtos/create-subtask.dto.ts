@@ -1,23 +1,36 @@
-import { IsString, IsNotEmpty, IsOptional, IsMongoId } from 'class-validator';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { TaskStatus } from '../../../shared/enums';
 
 export class CreateSubTaskDto {
   @IsString()
-  @IsNotEmpty()
   title: string;
+
+  @IsString()
+  description: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsString()
+  @IsOptional()
+  parentTask?: string;
+}
+
+export class UpdateSubTaskDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
 
   @IsString()
   @IsOptional()
   description?: string;
 
-  @IsMongoId()
-  @IsNotEmpty()
-  task: string; // The ID of the task this subtask belongs to
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
 
   @IsString()
   @IsOptional()
-  status?: string; // Status like 'pending', 'in-progress', 'completed'
-
-  @IsOptional()
-  @IsString()
-  dueDate?: string; // Optional due date for the subtask
+  parentTask?: string;
 }

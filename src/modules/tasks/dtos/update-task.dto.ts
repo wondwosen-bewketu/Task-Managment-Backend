@@ -1,5 +1,5 @@
-import { IsString, IsBoolean, IsOptional, IsArray } from 'class-validator';
-import { SubTask } from '../../../database/schemas';
+import { IsString, IsOptional, IsArray, IsEnum } from 'class-validator';
+import { TaskStatus, PriorityLevel } from '../../../shared/enums';
 
 export class UpdateTaskDto {
   @IsString()
@@ -10,11 +10,19 @@ export class UpdateTaskDto {
   @IsOptional()
   description?: string;
 
-  @IsBoolean()
+  @IsEnum(TaskStatus)
   @IsOptional()
-  isCompleted?: boolean;
+  status?: TaskStatus;
+
+  @IsEnum(PriorityLevel)
+  @IsOptional()
+  priority?: PriorityLevel;
 
   @IsArray()
   @IsOptional()
-  subTasks?: SubTask[];
+  subTasks?: string[]; // Array of SubTask IDs
+
+  @IsArray()
+  @IsOptional()
+  attachments?: string[]; // Array of File IDs
 }

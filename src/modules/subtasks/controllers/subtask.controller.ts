@@ -1,14 +1,14 @@
 import {
   Controller,
-  Post,
   Get,
-  Param,
+  Post,
   Body,
+  Param,
   Put,
   Delete,
 } from '@nestjs/common';
 import { SubTaskService } from '../services';
-import { CreateSubTaskDto } from '../dtos';
+import { CreateSubTaskDto, UpdateSubTaskDto } from '../dtos';
 import { SubTask } from '../../../database/schemas';
 
 @Controller('subtasks')
@@ -20,9 +20,9 @@ export class SubTaskController {
     return this.subTaskService.create(createSubTaskDto);
   }
 
-  @Get(':taskId')
-  findAll(@Param('taskId') taskId: string): Promise<SubTask[]> {
-    return this.subTaskService.findAll(taskId);
+  @Get()
+  findAll(): Promise<SubTask[]> {
+    return this.subTaskService.findAll();
   }
 
   @Get(':id')
@@ -33,13 +33,13 @@ export class SubTaskController {
   @Put(':id')
   update(
     @Param('id') id: string,
-    @Body() updateSubTaskDto: CreateSubTaskDto,
+    @Body() updateSubTaskDto: UpdateSubTaskDto,
   ): Promise<SubTask> {
     return this.subTaskService.update(id, updateSubTaskDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<SubTask> {
+  remove(@Param('id') id: string): Promise<void> {
     return this.subTaskService.remove(id);
   }
 }
