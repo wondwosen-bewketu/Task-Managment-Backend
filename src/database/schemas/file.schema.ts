@@ -1,23 +1,24 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
+import { BaseSchemaWithTimestamp } from './schema';
+import { FileType } from '../../shared/enums';
+import { Types } from 'mongoose';
 
-export type FileDocument = File & Document;
-
-@Schema()
-export class File {
+@Schema({ timestamps: true })
+export class File extends BaseSchemaWithTimestamp {
   @Prop({ required: true })
-  url: string;
-
-  @Prop({ required: true })
-  fileName: string;
+  filename: string;
 
   @Prop({ required: true })
-  fileType: string;
+  path: string;
+
+  @Prop({ required: true, enum: FileType })
+  type: FileType;
 
   @Prop({ required: true })
-  fileSize: number;
+  size: number;
 
-  @Prop({ type: Date, default: Date.now })
-  createdAt: Date;
+  @Prop({ type: Types.ObjectId, ref: 'Task' })
+  relatedTask: string;
 }
 
 export const FileSchema = SchemaFactory.createForClass(File);
