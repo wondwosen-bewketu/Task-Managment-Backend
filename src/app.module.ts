@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { appConfig, databaseConfig } from './config';
 import { DatabaseModule } from './database/database.module';
-import { TaskModule, SubTaskModule } from './modules'; // Import TaskModule
+import { TaskModule, SubTaskModule, FileModule } from './modules'; // Import TaskModule
 
 @Module({
   imports: [
@@ -11,11 +11,10 @@ import { TaskModule, SubTaskModule } from './modules'; // Import TaskModule
       isGlobal: true,
       load: [appConfig, databaseConfig], // Load both app and database configurations
     }),
-    // Database module
     DatabaseModule,
-    // Task module
     TaskModule,
     SubTaskModule,
+    FileModule,
   ],
 })
 export class AppModule {}

@@ -20,8 +20,8 @@ export class Task extends BaseSchemaWithSoftDelete {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'SubTask' }] })
   subTasks: Types.ObjectId[];
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'File' }] })
-  attachments: Types.ObjectId[];
+  @Prop({ type: [String], default: [] })
+  attachments: string[];
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task);
