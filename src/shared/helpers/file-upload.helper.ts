@@ -1,17 +1,37 @@
-import {
-  ALLOWED_FILE_TYPES,
-  MAX_FILE_SIZE_MB,
-} from '../constants/file-upload.constants';
+// src/shared/helpers/file-upload.helpers.ts
 
-export const validateFileType = (mimeType: string): boolean => {
-  return ALLOWED_FILE_TYPES.includes(mimeType);
-};
+import { FileUploadException } from '../errors';
+import { FILE_UPLOAD_CONSTANTS } from '../constants';
 
-export const validateFileSize = (size: number): boolean => {
-  const maxSizeInBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
-  return size <= maxSizeInBytes;
-};
+/**
+ * Validate the file type against the allowed MIME types.
+ */
+export function validateFileType(mimeType: string): void {
+  const allowedMimeTypes = FILE_UPLOAD_CONSTANTS.ALLOWED_FILE_TYPES;
 
-export const getFileExtension = (filename: string): string => {
-  return filename.split('.').pop() || '';
-};
+  if (!allowedMimeTypes.includes(mimeType)) {
+    throw FileUploadException.invalidFileType(allowedMimeTypes);
+  }
+}
+
+/**
+ * Validate the file size against the maximum allowed size.
+ */
+export function validateFileSize(size: number): void {
+  const maxSize = FILE_UPLOAD_CONSTANTS.MAX_FILE_SIZE;
+
+  if (size > maxSize) {
+    throw FileUploadException.fileSizeExceeded(maxSize / 1024 / 1024); // Convert bytes to MB
+  }
+}
+
+/**
+ * Get the file extension from the filename.
+ */
+export function getFileExtension(filename: string): string {
+  const parts = filename.split('.');
+  if (parts.length < 2) {
+    throw FileUploadException.invalidFileName();
+  }
+  return parts.pop()!;
+}

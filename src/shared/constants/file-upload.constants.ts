@@ -1,6 +1,4 @@
-export const MAX_FILE_SIZE_MB = 10; // Maximum file size in MB
-export const ALLOWED_FILE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'application/pdf',
-]; // MIME types
+export const FILE_UPLOAD_CONSTANTS = {
+  ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'application/pdf'], // Allowed MIME types
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5 MB in bytes
+};

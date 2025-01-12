@@ -1,45 +1,60 @@
 import {
   Controller,
-  Get,
   Post,
-  Body,
+  UploadedFile,
+  UseInterceptors,
+  Query,
+  BadRequestException,
   Param,
-  Put,
-  Delete,
+  Body,
+  Logger,
 } from '@nestjs/common';
-import { FileService } from '../services';
-import { CreateFileDto, UpdateFileDto } from '../dtos';
-import { File } from '../../../database/schemas';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileService } from '../services/file.service';
+// import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('files')
 export class FileController {
+  private readonly logger = new Logger(FileController.name);
   constructor(private readonly fileService: FileService) {}
 
-  @Post()
-  create(@Body() createFileDto: CreateFileDto): Promise<File> {
-    return this.fileService.create(createFileDto);
+  // Upload file for a task
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('taskId') taskId: string,
+  ): Promise<{ url: string; publicId: string }> {
+    if (!taskId) {
+      throw new BadRequestException('Task ID is required');
+    }
+
+    // Delegate to FileService to upload and associate file with the task
+    return this.fileService.uploadFileForTask(file, taskId);
   }
 
-  @Get()
-  findAll(): Promise<File[]> {
-    return this.fileService.findAll();
-  }
+  // // Delete file for a task
+  // @Delete('delete/:publicId')
+  // async deleteFile(
+  //   @Param('publicId') publicId: string,
+  //   @Query('taskId') taskId: string,
+  // ): Promise<void> {
+  //   if (!publicId || !taskId) {
+  //     throw new BadRequestException('Public ID and Task ID are required');
+  //   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string): Promise<File> {
-    return this.fileService.findOne(id);
-  }
+  //   // Delegate to FileService to delete the file and update the task
+  //   return this.fileService.deleteFileForTask(publicId, taskId);
+  // }
 
-  @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateFileDto: UpdateFileDto,
-  ): Promise<File> {
-    return this.fileService.update(id, updateFileDto);
-  }
+  @Post('summarize/:taskId')
+  async summarizeTask(@Param('taskId') taskId: string, @Body() body: any) {
+    const { propt } = body; // 'propt' will be used as the message content for summarization
+    if (!propt) {
+      throw new BadRequestException('Prompt is required.');
+    }
 
-  @Delete(':id')
-  remove(@Param('id') id: string): Promise<void> {
-    return this.fileService.remove(id);
+    const summary = await this.fileService.summarizeTaskFile(taskId, propt);
+    return summary;
   }
 }
