@@ -8,6 +8,13 @@ async function bootstrap() {
   // Create the Nest application
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS with optional configurations
+  app.enableCors({
+    origin: 'http://localhost:5173', // Specify the frontend's origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
+    credentials: true, // Allow cookies or authentication headers
+  });
+
   // Retrieve configuration using ConfigService
   const configService = app.get<ConfigService<ConfigType>>(ConfigService);
   const appConfig = configService.get('app', { infer: true });
