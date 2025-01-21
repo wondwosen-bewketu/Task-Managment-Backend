@@ -5,11 +5,12 @@ import { TaskModule } from '../tasks/task.module'; // Import TaskModule to acces
 import { FileController } from './controllers/file.controller';
 import { FileService } from './services/file.service';
 import { CloudinaryService } from './services/cloudinary.service';
+import { PdfSummarizerService } from './services';
 
 @Module({
   imports: [ConfigModule, TaskModule], // Import TaskModule here
   controllers: [FileController],
-  providers: [FileService, CloudinaryService], // FileService can now use TaskService
+  providers: [FileService, CloudinaryService, PdfSummarizerService], // FileService can now use TaskService
   exports: [FileService, CloudinaryService],
 })
 export class FileModule {}

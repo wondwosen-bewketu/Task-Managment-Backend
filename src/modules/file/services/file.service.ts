@@ -1,15 +1,12 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import axios from 'axios';
+import * as FormData from 'form-data';
 import { CloudinaryService } from './cloudinary.service';
 import { TaskService } from '../../tasks/services';
-import axios, { AxiosError } from 'axios';
 
 @Injectable()
 export class FileService {
   private readonly logger = new Logger(FileService.name);
-  private readonly chatPdfApiKey = 'AIzaSyDZ3NC4Y0yB8ypVY0AuzWMrdAh4C9BKu9Q'; // Your new API key here
-  private readonly chatPdfApiUrl = 'https://api.chatpdf.com/v1/sources/add-url';
-  private readonly chatPdfMessageUrl =
-    'https://api.chatpdf.com/v1/chats/message';
 
   constructor(
     private readonly cloudinaryService: CloudinaryService,
@@ -25,8 +22,10 @@ export class FileService {
       throw new BadRequestException('Task ID is required');
     }
 
+    // Upload file to Cloudinary
     const uploadedFile = await this.cloudinaryService.uploadFile(file, 'tasks');
 
+    // Find the task and update its attachments
     const task = await this.taskService.findOne(taskId);
     if (!task) {
       throw new BadRequestException('Task not found');
@@ -38,75 +37,49 @@ export class FileService {
     return uploadedFile;
   }
 
-  // Summarize the task file by interacting with ChatPDF API
-  async summarizeTaskFile(taskId: string, propt: string): Promise<any> {
+  async summarizePdf(publicId: string): Promise<string> {
     try {
-      const task = await this.taskService.findOne(taskId);
-      if (!task)
-        throw new BadRequestException(`Task with ID ${taskId} not found.`);
-      if (!task.attachments || task.attachments.length === 0) {
-        throw new BadRequestException('No attachments found for this task.');
-      }
+      // Fetch the file URL from Cloudinary using publicId
+      const fileUrl = await this.cloudinaryService.getFileUrl(publicId);
+      this.logger.log(`Fetching file from Cloudinary: ${fileUrl}`);
 
-      const firstAttachment = task.attachments[0];
-      if (!firstAttachment || !firstAttachment.startsWith('http')) {
-        throw new BadRequestException('Invalid file URL in attachments.');
-      }
+      // Prepare to send the PDF to the external API for summarization
+      const form = new FormData();
+      form.append('file', fileUrl);
 
-      const requestBody = { url: encodeURI(firstAttachment) };
-      this.logger.log(
-        `Request body for ChatPDF: ${JSON.stringify(requestBody)}`,
-      );
-
-      // Add the source file to ChatPDF
-      const addSourceResponse = await axios.post(
-        'https://api.chatpdf.com/v1/sources/add-url',
-        requestBody,
+      // Send request to the external API (Replace with actual URL and headers)
+      const response = await axios.post(
+        'https://api.apyhub.com/ai/summarize-url',
+        form,
         {
           headers: {
-            'x-api-key': this.chatPdfApiKey, // Using the new API key
-            'Content-Type': 'application/json',
+            ...form.getHeaders(),
+            'apy-token':
+              'APY02s97SNHioC3Lm3y5DWsGId7apyx4NUHFByRRzAIllvWlnuw473kCB0Bj0IAB1Mro2I',
           },
         },
       );
 
-      const sourceId = addSourceResponse.data.sourceId;
-      const summaryRequestBody = {
-        sourceId,
-        messages: [
-          { role: 'user', content: propt }, // Using 'propt' as message content
-        ],
-      };
-
-      // Request for summarization
-      const summarizeResponse = await axios.post(
-        this.chatPdfMessageUrl,
-        summaryRequestBody,
-        {
-          headers: {
-            'x-api-key': this.chatPdfApiKey, // Using the new API key
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      this.logger.log('Summary retrieved successfully.');
-      return summarizeResponse.data;
-    } catch (error) {
-      this.logger.error(
-        `Error during summarization: ${error.message}`,
-        error.response?.data || error.toString(),
-      );
-      if (error instanceof AxiosError) {
-        throw new Error(
-          `Failed to summarize the file. Status: ${
-            error.response?.status || 'Unknown'
-          }, Message: ${error.response?.data?.message || error.message}`,
+      if (response.status === 200) {
+        this.logger.log('PDF summarized successfully');
+        return response.data.summary;
+      } else {
+        this.logger.error(
+          'Failed to summarize PDF, external API returned an error',
         );
+        throw new BadRequestException('Failed to summarize the PDF');
       }
-      throw new Error(
-        'An unexpected error occurred while summarizing the file.',
-      );
+    } catch (error) {
+      this.logger.error('Error summarizing PDF', error.stack);
+      throw new BadRequestException('Failed to summarize the PDF');
     }
+  }
+  // Fetch file download URL from Cloudinary
+  async getFileDownloadUrl(publicId: string): Promise<string> {
+    if (!publicId) {
+      throw new BadRequestException('Public ID is required');
+    }
+
+    return await this.cloudinaryService.getFileUrl(publicId);
   }
 }

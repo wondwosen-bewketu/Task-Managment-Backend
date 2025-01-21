@@ -6,12 +6,10 @@ import {
   Query,
   BadRequestException,
   Param,
-  Body,
   Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileService } from '../services/file.service';
-// import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('files')
 export class FileController {
@@ -33,28 +31,28 @@ export class FileController {
     return this.fileService.uploadFileForTask(file, taskId);
   }
 
-  // // Delete file for a task
-  // @Delete('delete/:publicId')
-  // async deleteFile(
-  //   @Param('publicId') publicId: string,
-  //   @Query('taskId') taskId: string,
-  // ): Promise<void> {
-  //   if (!publicId || !taskId) {
-  //     throw new BadRequestException('Public ID and Task ID are required');
-  //   }
-
-  //   // Delegate to FileService to delete the file and update the task
-  //   return this.fileService.deleteFileForTask(publicId, taskId);
-  // }
-
-  @Post('summarize/:taskId')
-  async summarizeTask(@Param('taskId') taskId: string, @Body() body: any) {
-    const { propt } = body; // 'propt' will be used as the message content for summarization
-    if (!propt) {
-      throw new BadRequestException('Prompt is required.');
+  @Post('summarize/tasks/:publicId') // Add 'tasks' here
+  async summarizeFile(
+    @Param('publicId') publicId: string,
+  ): Promise<{ summary: string }> {
+    try {
+      const fullPublicId = `tasks/${publicId}`;
+      this.logger.log(
+        `Request to summarize file with publicId: ${fullPublicId}`,
+      );
+      const summary = await this.fileService.summarizePdf(fullPublicId);
+      return { summary };
+    } catch (error) {
+      this.logger.error('Error summarizing file', error.stack);
+      throw new Error('Failed to summarize file');
     }
+  }
 
-    const summary = await this.fileService.summarizeTaskFile(taskId, propt);
-    return summary;
+  @Post('download/:publicId')
+  async downloadFile(
+    @Param('publicId') publicId: string,
+  ): Promise<{ url: string }> {
+    const url = await this.fileService.getFileDownloadUrl(publicId);
+    return { url }; // Return the download URL for the file
   }
 }
