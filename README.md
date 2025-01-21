@@ -1,73 +1,204 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Project Name: Fidle Labs Task Management System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive backend solution for managing tasks, subtasks, and statuses with out authentication, task creation, and status management. This API is built with **NestJS**, leveraging modern practices such as modular architecture, unit testing, and input validation. It also integrates with external services and supports Docker for containerization.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Table of Contents
+1. [About](#about)
+2. [Features](#features)
+3. [Tech Stack](#tech-stack)
+4. [Installation](#installation)
+   - [Requirements](#requirements)
+   - [Setup](#setup)
+5. [API Documentation](#api-documentation)
+6. [Running the Application](#running-the-application)
+7. [Docker Setup](#docker-setup)
+8. [Testing](#testing)
+9. [Contributing](#contributing)
+10. [License](#license)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
+
+## About
+
+This is a task management API that enables users to create, update, and manage tasks and subtasks  and file managment . It provides a flexible system for task categorization and state management, as well as user authentication via JWT tokens. The project follows **RESTful** principles and is designed for scalability and ease of maintenance.
+
+---
+
+## Features
+
+
+- **Task Management**: Create, retrieve, update, and delete tasks. Tasks can have different statuses (e.g., "to-do", "in progress", "completed").
+- **Subtask Management**: Create, retrieve, update, and delete subtasks within tasks.
+- **Search & Filtering**: Filter tasks based on attributes such as status, priority, and due date.
+- **Task Status Updates**: Dynamically update task statuses with corresponding API routes.
+- **Pagination**: Support for pagination when listing tasks to improve performance.
+- **File Management**: Upload and download files using Cloudinary integration.
+- **Docker Support**: Containerized app for easy deployment.
+- **API Documentation**: Auto-generated API docs using Swagger.
+
+---
+
+## Tech Stack
+
+- **Backend Framework**: [NestJS](https://nestjs.com/) (Node.js)
+- **Database**: MongoDB (with Mongoose ORM)
+- **Validation**: Class-Validator (for input validation)
+- **Testing**: Jest, Supertest (for API testing)
+- **Documentation**: Swagger (for interactive API docs)
+- **Containerization**: Docker
+- **Environment Variables**: dotenv
+
+---
 
 ## Installation
 
-```bash
-$ pnpm install
+### Requirements
+To run this project locally, you need to have the following installed:
+
+- Node.js (v20 or higher)
+- Docker (optional for containerization)
+- MongoDB (or use a cloud database like MongoDB Atlas)
+
+### Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/wondwosen-bewketu/Task-Managment-Backend.git
+   cd Task-Managment-Backend
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up environment variables:**
+
+   Copy `.env.example` to `.env` and fill in the necessary values:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Example `.env`:
+   ```
+   JWT_SECRET=your_jwt_secret
+   MONGO_URI=mongodb://localhost:27017/task-management
+   ```
+
+4. **Run the application locally:**
+   ```bash
+   pnpm dev 
+   pnpm start
+   ```
+
+   This will start the server on `http://localhost:3000` or by your port name.
+
+---
+
+## API Documentation
+
+You can access the API documentation generated by Swagger at the following URL:
+
+```
+http://localhost:3000/docs or http://localhost:PORT/docs
 ```
 
-## Running the app
+This interactive API documentation includes all available endpoints, request parameters, and response formats.
+
+### Available Endpoints
+
+
+#### **Task Management**
+- **POST** `/tasks`: Create a new task.
+- **GET** `/tasks`: Retrieve a list of tasks with optional filtering and pagination.
+- **GET** `/tasks/:id`: Get details of a specific task by ID.
+- **PUT** `/tasks/:id`: Update a specific task by ID.
+- **DELETE** `/tasks/:id`: Delete a specific task by ID.
+
+#### **Subtask Management**
+- **POST** `/tasks/:taskId/subtasks`: Create a new subtask within a task.
+- **GET** `/tasks/:taskId/subtasks`: Get all subtasks of a specific task.
+- **PUT** `/tasks/:taskId/subtasks/:subtaskId`: Update a subtask.
+- **DELETE** `/tasks/:taskId/subtasks/:subtaskId`: Delete a subtask.
+
+#### **Task Status Management**
+- **PUT** `/tasks/:id/status`: Update the status of a task.
+
+---
+
+## Running the Application
+
+### Development Mode
+
+1. **Start the development server:**
+   ```bash
+pnpm dev
+   ```
+   This will start the app in watch mode, which automatically recompiles the code on file changes.
+
+2. **Start the production server:**
+   ```bash
+  pnpm start
+   ```
+   This will run the app in production mode (after building the app with `pnpm run build`).
+
+---
+
+## Docker Setup
+
+This project is Dockerized for easy deployment. You can build and run the project using Docker and Docker Compose.
+
+1. **Build the Docker images:**
+   ```bash
+   docker-compose build
+   ```
+
+2. **Run the app with Docker Compose:**
+   ```bash
+   docker-compose up
+   ```
+
+3. **Access the application:**
+   The app will be accessible on `http://localhost:3000`.
+
+4. **Stop the application:**
+   ```bash
+   docker-compose down
+   ```
+
+---
+
+## Testing
+
+The project includes unit tests, integration tests, and API tests. The tests are written using **Jest** and **Supertest**.
+
+### Running Tests
+
+To run the tests locally:
+
+1. **Run all tests:**
+   ```bash
+   npm run test
+   ```
+
+2. **Run unit tests only:**
+   ```bash
+   npm run test:unit
+   ```
+
+3. **Run API tests only:**
+   ```bash
+   npm run test:api
+   ```
+
+### Test Coverage
+
+Test coverage is available. You can view the test coverage report by running:
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+npm run test:cov
 ```
 
-## Test
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+---

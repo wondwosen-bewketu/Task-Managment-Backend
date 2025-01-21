@@ -1,3 +1,5 @@
+// main.ts (NestJS entry point)
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
@@ -10,9 +12,9 @@ async function bootstrap() {
 
   // Enable CORS with optional configurations
   app.enableCors({
-    origin: 'http://localhost:5173', // Specify the frontend's origin
+    origin: 'http://localhost:5173', // Specify the frontend's origin (you can also use a wildcard '*' for testing)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
-    credentials: true, // Allow cookies or authentication headers
+    credentials: true, // Allow cookies or authentication headers if needed
   });
 
   // Retrieve configuration using ConfigService
@@ -20,7 +22,7 @@ async function bootstrap() {
   const appConfig = configService.get('app', { infer: true });
 
   // Set application port and name
-  const port = appConfig?.port;
+  const port = appConfig?.port || 3000; // Ensure a default port if not defined
   const appName = appConfig?.appName || 'NestJS App';
 
   // Setup Swagger documentation
