@@ -6,13 +6,20 @@ import {
   Param,
   Put,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { SubTaskService } from '../services';
 import { CreateSubTaskDto, UpdateSubTaskDto } from '../dtos';
 import { SubTask } from '../../../database/schemas';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 
-@ApiTags('SubTasks') // Groups endpoints under "SubTasks" in Swagger UI
+@ApiTags('SubTasks')
 @Controller('subtasks')
 export class SubTaskController {
   constructor(private readonly subTaskService: SubTaskService) {}
@@ -30,14 +37,31 @@ export class SubTaskController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve all sub-tasks' })
+  @ApiOperation({ summary: 'Retrieve all sub-tasks with pagination' })
+  @ApiQuery({
+    name: 'page',
+    description: 'Page number for pagination',
+    required: false,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Number of records per page',
+    required: false,
+    example: 10,
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all sub-tasks.',
     type: [SubTask],
   })
-  findAll(): Promise<SubTask[]> {
-    return this.subTaskService.findAll();
+  findAll(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ): Promise<{ data: SubTask[]; total: number }> {
+    const pageNumber = parseInt(page, 10) || 1;
+    const pageSize = parseInt(limit, 10) || 10;
+    return this.subTaskService.findAll(pageNumber, pageSize);
   }
 
   @Get(':id')
