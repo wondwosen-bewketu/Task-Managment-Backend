@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Task, SubTask } from '../../../database/schemas';
 import { CreateTaskDto, UpdateTaskDto } from '../dtos';
+import { PriorityLevel, TaskStatus } from '../../../shared/enums';
 
 @Injectable()
 export class TaskService {
@@ -28,16 +29,32 @@ export class TaskService {
     return createdTask.save();
   }
 
-  // Retrieve all tasks with population and selected fields
-  async findAll(): Promise<Task[]> {
-    return this.taskModel
-      .find({}, 'title description status priority subTasks attachments')
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    filters?: { status?: TaskStatus; priority?: PriorityLevel },
+  ): Promise<{ tasks: Task[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const query = {
+      ...(filters?.status && { status: filters.status }),
+      ...(filters?.priority && { priority: filters.priority }),
+    };
+
+    const tasks = await this.taskModel
+      .find(query, 'title description status priority subTasks attachments')
       .populate({
         path: 'subTasks',
         model: 'SubTask',
         select: 'title description status',
       })
+      .skip(skip)
+      .limit(limit)
       .exec();
+
+    const total = await this.taskModel.countDocuments(query).exec();
+
+    return { tasks, total };
   }
 
   // Retrieve a single task by ID with population
@@ -54,7 +71,15 @@ export class TaskService {
       .exec();
   }
 
-  // Update a task
+  // Update the status of a task
+  async updateStatus(id: string, status: TaskStatus): Promise<Task | null> {
+    if (!Types.ObjectId.isValid(id)) return null;
+
+    return this.taskModel
+      .findByIdAndUpdate(id, { status }, { new: true })
+      .exec();
+  }
+
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task | null> {
     if (!Types.ObjectId.isValid(id)) return null;
 
