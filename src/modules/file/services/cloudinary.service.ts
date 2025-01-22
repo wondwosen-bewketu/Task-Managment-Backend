@@ -46,11 +46,16 @@ export class CloudinaryService {
     try {
       const result = await cloudinary.api.resource(publicId);
       if (!result || result.error) {
-        throw new Error(`Resource not found - ${publicId}`);
+        this.logger.error(`Cloudinary resource not found: ${publicId}`);
+        throw new Error(
+          result.error?.message || `Resource not found - ${publicId}`,
+        );
       }
       return result.secure_url;
     } catch (error) {
-      console.error('Error fetching file from Cloudinary:', error);
+      this.logger.error(
+        `Error fetching file from Cloudinary for publicId "${publicId}": ${error.message}`,
+      );
       throw new Error(
         `Failed to retrieve file from Cloudinary: ${error.message}`,
       );

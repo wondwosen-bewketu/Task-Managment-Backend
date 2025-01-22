@@ -20,7 +20,7 @@ export class CreateSubTaskDto {
   @ApiPropertyOptional({
     description: 'The status of the sub-task',
     enum: TaskStatus,
-    example: 'in_progress',
+    example: 'inprogress',
   })
   @IsEnum(TaskStatus)
   @IsOptional()

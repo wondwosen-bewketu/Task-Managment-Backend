@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { SubTask, Task } from '../../../database/schemas';
@@ -12,71 +16,111 @@ export class SubTaskService {
   ) {}
 
   async create(createSubTaskDto: CreateSubTaskDto): Promise<SubTask> {
-    const { parentTask, ...subTaskData } = createSubTaskDto;
+    try {
+      console.log('Creating subtask:', createSubTaskDto); // Optional: Remove in production if unnecessary
 
-    const task = await this.taskModel.findById(parentTask);
-    if (!task) {
-      throw new NotFoundException('Parent task not found');
+      const { parentTask, ...subTaskData } = createSubTaskDto;
+
+      // Validate if the parent task exists
+      const task = await this.taskModel.findById(parentTask);
+      if (!task) {
+        throw new NotFoundException('Parent task not found');
+      }
+
+      // Create the subtask and associate it with the parent task
+      const subTask = new this.subTaskModel({
+        ...subTaskData,
+        parentTask,
+      });
+
+      await subTask.save();
+
+      // Add subtask to the parent task
+      task.subTasks.push(subTask._id);
+      await task.save();
+
+      // Return the subtask along with the updated parent task (optional)
+      return subTask;
+    } catch (error) {
+      console.error('Error creating subtask:', error);
+      throw new InternalServerErrorException('Failed to create subtask');
     }
-
-    const subTask = await this.subTaskModel.create({
-      ...subTaskData,
-      parentTask,
-    });
-    task.subTasks.push(subTask._id);
-    await task.save();
-
-    return subTask;
   }
 
   async findAll(
-    page: number,
-    limit: number,
+    page: number = 1,
+    limit: number = 10,
   ): Promise<{ data: SubTask[]; total: number }> {
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      this.subTaskModel.find().skip(skip).limit(limit).exec(),
-      this.subTaskModel.countDocuments().exec(),
-    ]);
+    try {
+      const skip = (page - 1) * limit;
 
-    return { data, total };
+      const [data, total] = await Promise.all([
+        this.subTaskModel.find().skip(skip).limit(limit).exec(),
+        this.subTaskModel.countDocuments().exec(),
+      ]);
+
+      return { data, total };
+    } catch (error) {
+      console.error('Error fetching subtasks:', error);
+      throw new InternalServerErrorException('Failed to fetch subtasks');
+    }
   }
 
   async findOne(id: string): Promise<SubTask> {
-    const subTask = await this.subTaskModel.findById(id).exec();
-    if (!subTask) {
-      throw new NotFoundException(`Subtask with ID ${id} not found`);
+    try {
+      const subTask = await this.subTaskModel.findById(id).exec();
+      if (!subTask) {
+        throw new NotFoundException(`Subtask with ID ${id} not found`);
+      }
+      return subTask;
+    } catch (error) {
+      console.error(`Error fetching subtask with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to fetch subtask');
     }
-    return subTask;
   }
 
   async update(
     id: string,
     updateSubTaskDto: UpdateSubTaskDto,
   ): Promise<SubTask> {
-    const subTask = await this.subTaskModel
-      .findByIdAndUpdate(id, updateSubTaskDto, { new: true })
-      .exec();
-    if (!subTask) {
-      throw new NotFoundException(`Subtask with ID ${id} not found`);
+    try {
+      const subTask = await this.subTaskModel
+        .findByIdAndUpdate(id, updateSubTaskDto, { new: true })
+        .exec();
+
+      if (!subTask) {
+        throw new NotFoundException(`Subtask with ID ${id} not found`);
+      }
+
+      return subTask;
+    } catch (error) {
+      console.error(`Error updating subtask with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to update subtask');
     }
-    return subTask;
   }
 
   async remove(id: string): Promise<void> {
-    const subTask = await this.subTaskModel.findByIdAndDelete(id).exec();
-    if (!subTask) {
-      throw new NotFoundException(`Subtask with ID ${id} not found`);
-    }
-
-    if (subTask.parentTask) {
-      const parentTask = await this.taskModel.findById(subTask.parentTask);
-      if (parentTask) {
-        parentTask.subTasks = parentTask.subTasks.filter(
-          (subTaskId) => !subTaskId.equals(subTask._id),
-        );
-        await parentTask.save();
+    try {
+      const subTask = await this.subTaskModel.findByIdAndDelete(id).exec();
+      if (!subTask) {
+        throw new NotFoundException(`Subtask with ID ${id} not found`);
       }
+
+      // Ensure that the parent task exists and remove the subtask reference from it
+      if (subTask.parentTask) {
+        const parentTask = await this.taskModel.findById(subTask.parentTask);
+        if (parentTask) {
+          parentTask.subTasks = parentTask.subTasks.filter(
+            (subTaskId) => !subTaskId.equals(subTask._id),
+          );
+          await parentTask.save();
+        } else {
+          console.error('Parent task not found during subtask removal');
+        }
+      }
+    } catch (error) {
+      console.error(`Error removing subtask with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to remove subtask');
     }
   }
 }

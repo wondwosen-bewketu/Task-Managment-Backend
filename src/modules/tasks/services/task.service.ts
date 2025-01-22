@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Task, SubTask } from '../../../database/schemas';
@@ -12,96 +16,122 @@ export class TaskService {
     @InjectModel(SubTask.name) private readonly subTaskModel: Model<SubTask>,
   ) {}
 
-  // Helper to convert IDs to ObjectId
   private static toObjectIdArray(ids?: string[]): Types.ObjectId[] | undefined {
     return ids?.map((id) => new Types.ObjectId(id));
   }
 
-  // Create a new task
-  async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const { subTasks, ...taskData } = createTaskDto;
+  private validateObjectId(id: string): void {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid ID format: ${id}`);
+    }
+  }
 
-    const createdTask = new this.taskModel({
-      ...taskData,
-      subTasks: TaskService.toObjectIdArray(subTasks),
-    });
+  async create(createTaskDto: CreateTaskDto): Promise<any> {
+    try {
+      const { subTasks, ...taskData } = createTaskDto;
+      const createdTask = new this.taskModel({
+        ...taskData,
+        subTasks: TaskService.toObjectIdArray(subTasks),
+      });
 
-    return createdTask.save();
+      const task = await createdTask.save();
+      return task.toObject({ versionKey: false }); // Removes __v
+    } catch (error) {
+      throw new BadRequestException('Failed to create task');
+    }
   }
 
   async findAll(
-    page: number = 1,
-    limit: number = 10,
+    page = 1,
+    limit = 10,
     filters?: { status?: TaskStatus; priority?: PriorityLevel },
-  ): Promise<{ tasks: Task[]; total: number }> {
+  ): Promise<any> {
     const skip = (page - 1) * limit;
 
-    const query = {
+    const query: Partial<Record<string, unknown>> = {
       ...(filters?.status && { status: filters.status }),
       ...(filters?.priority && { priority: filters.priority }),
     };
 
-    const tasks = await this.taskModel
-      .find(query, 'title description status priority subTasks attachments')
-      .populate({
-        path: 'subTasks',
-        model: 'SubTask',
-        select: 'title description status',
-      })
-      .skip(skip)
-      .limit(limit)
-      .exec();
+    const [tasks, total] = await Promise.all([
+      this.taskModel
+        .find(query)
+        .populate({
+          path: 'subTasks',
+          model: 'SubTask', // Reference the SubTask model
+          select: 'title description status', // Specify the fields to fetch from SubTask
+        })
+        .skip(skip)
+        .limit(limit)
+        .lean() // Converts documents to plain objects
+        .exec(),
+      this.taskModel.countDocuments(query).exec(),
+    ]);
 
-    const total = await this.taskModel.countDocuments(query).exec();
-
-    return { tasks, total };
+    return {
+      tasks,
+      total,
+    };
   }
 
-  // Retrieve a single task by ID with population
-  async findOne(id: string): Promise<Task | null> {
-    if (!Types.ObjectId.isValid(id)) return null;
+  async findOne(id: string): Promise<any> {
+    this.validateObjectId(id);
 
-    return this.taskModel
-      .findById(id, 'title description status priority subTasks attachments')
+    const task = await this.taskModel
+      .findById(id)
       .populate({
         path: 'subTasks',
-        model: 'SubTask',
-        select: 'title description status',
+        model: 'SubTask', // Reference the SubTask model
+        select: 'title description status', // Specify the fields to fetch from SubTask
       })
+      .lean() // Converts document to a plain JavaScript object
       .exec();
+
+    if (!task) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    return task;
   }
 
-  // Update the status of a task
-  async updateStatus(id: string, status: TaskStatus): Promise<Task | null> {
-    if (!Types.ObjectId.isValid(id)) return null;
+  async updateStatus(id: string, status: TaskStatus): Promise<any> {
+    this.validateObjectId(id);
 
-    return this.taskModel
+    const updatedTask = await this.taskModel
       .findByIdAndUpdate(id, { status }, { new: true })
+      .lean()
       .exec();
+
+    if (!updatedTask) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    const { __v, ...rest } = updatedTask; // Remove __v field from the response
+    return rest;
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task | null> {
-    if (!Types.ObjectId.isValid(id)) return null;
+  async update(id: string, updateTaskDto: UpdateTaskDto): Promise<any> {
+    this.validateObjectId(id);
 
-    const { subTasks, ...updateData } = updateTaskDto;
-
-    return this.taskModel
-      .findByIdAndUpdate(
-        id,
-        {
-          ...updateData,
-          ...(subTasks && { subTasks: TaskService.toObjectIdArray(subTasks) }),
-        },
-        { new: true },
-      )
+    const updatedTask = await this.taskModel
+      .findByIdAndUpdate(id, updateTaskDto, { new: true })
+      .lean()
       .exec();
+
+    if (!updatedTask) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    const { __v, ...rest } = updatedTask; // Remove __v field from the response
+    return rest;
   }
 
-  // Remove a task
-  async remove(id: string): Promise<boolean> {
-    if (!Types.ObjectId.isValid(id)) return false;
+  async remove(id: string): Promise<void> {
+    this.validateObjectId(id);
 
     const result = await this.taskModel.findByIdAndDelete(id).exec();
-    return !!result;
+    if (!result) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
   }
 }

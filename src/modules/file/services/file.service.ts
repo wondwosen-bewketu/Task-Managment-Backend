@@ -82,4 +82,19 @@ export class FileService {
 
     return await this.cloudinaryService.getFileUrl(publicId);
   }
+
+  async getFilesForTask(taskId: string): Promise<string[]> {
+    if (!taskId) {
+      throw new BadRequestException('Task ID is required');
+    }
+
+    // Fetch the task from the database
+    const task = await this.taskService.findOne(taskId);
+    if (!task) {
+      throw new BadRequestException('Task not found');
+    }
+
+    // Return the list of file URLs associated with the task
+    return task.attachments || [];
+  }
 }
