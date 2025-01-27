@@ -44,13 +44,24 @@ export class TaskService {
   async findAll(
     page = 1,
     limit = 10,
-    filters?: { status?: TaskStatus; priority?: PriorityLevel },
+    filters?: {
+      status?: TaskStatus;
+      priority?: PriorityLevel;
+      title?: string;
+      description?: string;
+    },
   ): Promise<any> {
     const skip = (page - 1) * limit;
 
     const query: Partial<Record<string, unknown>> = {
       ...(filters?.status && { status: filters.status }),
       ...(filters?.priority && { priority: filters.priority }),
+      ...(filters?.title && {
+        title: { $regex: filters.title, $options: 'i' },
+      }), // Case-insensitive search
+      ...(filters?.description && {
+        description: { $regex: filters.description, $options: 'i' },
+      }),
     };
 
     const [tasks, total] = await Promise.all([
@@ -58,8 +69,8 @@ export class TaskService {
         .find(query)
         .populate({
           path: 'subTasks',
-          model: 'SubTask', // Reference the SubTask model
-          select: 'title description status', // Specify the fields to fetch from SubTask
+          model: 'SubTask',
+          select: 'title description status',
         })
         .skip(skip)
         .limit(limit)

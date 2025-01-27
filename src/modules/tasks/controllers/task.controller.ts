@@ -12,7 +12,7 @@ import {
 import { TaskService } from '../services/task.service';
 import { CreateTaskDto, UpdateTaskDto } from '../dtos';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { TaskStatus } from '../../../shared/enums';
+import { PriorityLevel, TaskStatus } from '../../../shared/enums';
 import { Task } from '../../../database/schemas';
 
 @ApiTags('tasks')
@@ -32,12 +32,21 @@ export class TaskController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all tasks with pagination' })
+  @ApiOperation({ summary: 'Get all tasks with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'status', required: false, type: String, enum: TaskStatus })
+  @ApiQuery({
+    name: 'priority',
+    required: false,
+    type: String,
+    enum: Object.values(PriorityLevel),
+  }) // Fix here
+  @ApiQuery({ name: 'title', required: false, type: String })
+  @ApiQuery({ name: 'description', required: false, type: String })
   @ApiResponse({
     status: 200,
-    description: 'Return paginated tasks',
+    description: 'Return paginated and filtered tasks',
     schema: {
       properties: {
         tasks: { type: 'array', items: { $ref: '#/components/schemas/Task' } },
@@ -48,8 +57,18 @@ export class TaskController {
   async findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Query('status') status?: TaskStatus,
+    @Query('priority') priority?: PriorityLevel,
+    @Query('title') title?: string,
+    @Query('description') description?: string,
   ): Promise<any> {
-    return this.taskService.findAll(page, limit);
+    const filters = {
+      status,
+      priority,
+      title,
+      description,
+    };
+    return this.taskService.findAll(page, limit, filters);
   }
 
   @Get(':id')

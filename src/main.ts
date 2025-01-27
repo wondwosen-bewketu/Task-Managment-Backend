@@ -12,7 +12,10 @@ async function bootstrap() {
 
   // Enable CORS with optional configurations
   app.enableCors({
-    origin: 'http://localhost:5173', // Specify the frontend's origin (you can also use a wildcard '*' for testing)
+    origin: [
+      'http://localhost:5173',
+      'https://fidel-task-managment.vercel.app',
+    ], // Specify the frontend's origin (you can also use a wildcard '*' for testing)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
     credentials: true, // Allow cookies or authentication headers if needed
   });
@@ -37,5 +40,4 @@ async function bootstrap() {
   // Start listening on the specified port
   await app.listen(port);
 }
-
 bootstrap();
