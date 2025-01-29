@@ -74,6 +74,7 @@ export class TaskService {
         })
         .skip(skip)
         .limit(limit)
+        .sort({ createdAt: -1 }) // Sort by createdAt in descending order (newest first)
         .lean() // Converts documents to plain objects
         .exec(),
       this.taskModel.countDocuments(query).exec(),
@@ -140,6 +141,20 @@ export class TaskService {
   async remove(id: string): Promise<void> {
     this.validateObjectId(id);
 
+    // Fetch the task to get associated subTasks
+    const task = await this.taskModel.findById(id).exec();
+    if (!task) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    // Delete the associated subtasks
+    if (task.subTasks && task.subTasks.length > 0) {
+      await this.subTaskModel
+        .deleteMany({ _id: { $in: task.subTasks } })
+        .exec();
+    }
+
+    // Delete the task
     const result = await this.taskModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException(`Task with ID ${id} not found`);
