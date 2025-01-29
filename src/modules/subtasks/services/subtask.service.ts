@@ -17,30 +17,32 @@ export class SubTaskService {
 
   async create(createSubTaskDto: CreateSubTaskDto): Promise<SubTask> {
     try {
-      console.log('Creating subtask:', createSubTaskDto); // Optional: Remove in production if unnecessary
+      console.log('Creating subtask:', createSubTaskDto);
 
       const { parentTask, ...subTaskData } = createSubTaskDto;
 
-      // Validate if the parent task exists
-      const task = await this.taskModel.findById(parentTask);
-      if (!task) {
-        throw new NotFoundException('Parent task not found');
+      // Ensure title and description are not empty
+      if (!subTaskData.title || !subTaskData.description) {
+        throw new Error('Title and description are required for a subtask.');
       }
 
-      // Create the subtask and associate it with the parent task
+      const task = await this.taskModel.findById(parentTask);
+
+      if (!task) {
+        throw new Error('Parent task not found');
+      }
+
       const subTask = new this.subTaskModel({
         ...subTaskData,
         parentTask,
       });
 
-      await subTask.save();
+      const savedSubtask = await subTask.save();
 
-      // Add subtask to the parent task
-      task.subTasks.push(subTask._id);
+      task.subTasks.push(savedSubtask._id);
       await task.save();
 
-      // Return the subtask along with the updated parent task (optional)
-      return subTask;
+      return savedSubtask;
     } catch (error) {
       console.error('Error creating subtask:', error);
       throw new InternalServerErrorException('Failed to create subtask');
