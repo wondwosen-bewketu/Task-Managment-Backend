@@ -68,7 +68,7 @@ To run this project locally, you need to have the following installed:
    git clone https://github.com/wondwosen-bewketu/Task-Managment-Backend.git
    cd Task-Managment-Backend
    ```
-
+or this is the live api `https://task-managment-backend-0q1f.onrender.com`
 2. **Install dependencies:**
    ```bash
    pnpm install
@@ -83,7 +83,6 @@ To run this project locally, you need to have the following installed:
 
    Example `.env`:
    ```
-   JWT_SECRET=your_jwt_secret
    MONGO_URI=mongodb://localhost:27017/task-management
    ```
 
@@ -161,7 +160,7 @@ This project is Dockerized for easy deployment. You can build and run the projec
    ```
 
 3. **Access the application:**
-   The app will be accessible on `http://localhost:3000`.
+   The app will be accessible on `http://localhost:300`.
 
 4. **Stop the application:**
    ```bash
